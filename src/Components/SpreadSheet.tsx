@@ -4,9 +4,9 @@ import Status from "./Status";
 import KeyPad from "./KeyPad";
 import SpreadSheetClient from "../Engine/SpreadSheetClient";
 import SheetHolder from "./SheetHolder";
-
 import { ButtonNames } from "../Engine/GlobalDefinitions";
-
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 interface SpreadSheetProps {
   documentName: string;
@@ -14,22 +14,38 @@ interface SpreadSheetProps {
 
 /**
  * the main component for the Spreadsheet.  It is the parent of all the other components
- * 
+ *
  *
  * */
 
 // create the client that talks to the backend.
-const spreadSheetClient = new SpreadSheetClient('test', 'juancho');
+const spreadSheetClient = new SpreadSheetClient("test", "juancho");
 
 function SpreadSheet({ documentName }: SpreadSheetProps) {
-  const [formulaString, setFormulaString] = useState(spreadSheetClient.getFormulaString())
-  const [resultString, setResultString] = useState(spreadSheetClient.getResultString())
-  const [cells, setCells] = useState(spreadSheetClient.getSheetDisplayStringsForGUI());
-  const [statusString, setStatusString] = useState(spreadSheetClient.getEditStatusString());
-  const [currentCell, setCurrentCell] = useState(spreadSheetClient.getWorkingCellLabel());
-  const [currentlyEditing, setCurrentlyEditing] = useState(spreadSheetClient.getEditStatus());
-  const [userName, setUserName] = useState(window.sessionStorage.getItem('userName') || "");
+  const [formulaString, setFormulaString] = useState(
+    spreadSheetClient.getFormulaString()
+  );
+  const [resultString, setResultString] = useState(
+    spreadSheetClient.getResultString()
+  );
+  const [cells, setCells] = useState(
+    spreadSheetClient.getSheetDisplayStringsForGUI()
+  );
+  const [statusString, setStatusString] = useState(
+    spreadSheetClient.getEditStatusString()
+  );
+  const [currentCell, setCurrentCell] = useState(
+    spreadSheetClient.getWorkingCellLabel()
+  );
+  const [currentlyEditing, setCurrentlyEditing] = useState(
+    spreadSheetClient.getEditStatus()
+  );
+  const [userName, setUserName] = useState(
+    window.sessionStorage.getItem("userName") || ""
+  );
 
+  const [error, setError] = useState("");
+  const notify = () => toast("Please enter a username");
 
   function updateDisplayValues(): void {
     spreadSheetClient.userName = userName;
@@ -50,40 +66,48 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
     return () => clearInterval(interval);
   });
 
-
   function getUserLogin() {
-    return <div>
-      <input
-        type="text"
-        placeholder="User name"
-        defaultValue={userName}
-        onChange={(event) => {
-          // get the text from the input
-          let userName = event.target.value;
-          window.sessionStorage.setItem('userName', userName);
-          // set the user name
-          setUserName(userName);
-          spreadSheetClient.userName = userName;
-        }} />
-    </div>
-
+    return (
+      <div>
+        <input
+          type="text"
+          placeholder="User name"
+          defaultValue={userName}
+          onChange={(event) => {
+            // get the text from the input
+            let userName = event.target.value;
+            window.sessionStorage.setItem("userName", userName);
+            // set the user name
+            setUserName(userName);
+            spreadSheetClient.userName = userName;
+          }}
+        />
+      </div>
+    );
   }
 
+  const checkLogin = () => {
+    const checkuserName = userName;
+    if (checkuserName === "") {
+      setError("Please enter a username first");
+      notify()
+    }
+  };
+
   /**
-   * 
-   * @param event 
-   * 
+   *
+   * @param event
+   *
    * This function is the call back for the command buttons
-   * 
+   *
    * It will call the machine to process the command button
-   * 
+   *
    * the buttons done, edit, clear, all clear, and restart do not require asynchronous processing
-   * 
+   *
    * the other buttons do require asynchronous processing and so the function is marked async
    */
   async function onCommandButtonClick(text: string): Promise<void> {
-
-
+    checkLogin();
     switch (text) {
       case ButtonNames.edit_toggle:
         if (currentlyEditing) {
@@ -101,7 +125,6 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
       case ButtonNames.allClear:
         spreadSheetClient.clearFormula();
         break;
-
     }
     // update the display values
     updateDisplayValues();
@@ -109,44 +132,40 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
 
   /**
    *  This function is the call back for the number buttons and the Parenthesis buttons
-   * 
+   *
    * They all automatically start the editing of the current formula.
-   * 
+   *
    * @param event
-   * 
+   *
    * */
   function onButtonClick(event: React.MouseEvent<HTMLButtonElement>): void {
-
+    checkLogin();
     const text = event.currentTarget.textContent;
     let trueText = text ? text : "";
     spreadSheetClient.setEditStatus(true);
     spreadSheetClient.addToken(trueText);
 
     updateDisplayValues();
-
   }
 
-
   /**
-   * 
-   * @param event 
-   * 
+   *
+   * @param event
+   *
    * This function is called when a cell is clicked
    * If the edit status is true then it will send the token to the machine.
    * If the edit status is false then it will ask the machine to update the current formula.
    */
   function onCellClick(event: React.MouseEvent<HTMLButtonElement>): void {
-
     const cellLabel = event.currentTarget.getAttribute("cell-label");
     // calculate the current row and column of the clicked on cell
 
     const editStatus = spreadSheetClient.getEditStatus();
     let realCellLabel = cellLabel ? cellLabel : "";
 
-
     // if the edit status is true then add the token to the machine
     if (editStatus) {
-      spreadSheetClient.addCell(realCellLabel);  // this will never be ""
+      spreadSheetClient.addCell(realCellLabel); // this will never be ""
       updateDisplayValues();
     }
     // if the edit status is false then set the current cell to the clicked on cell
@@ -155,23 +174,34 @@ function SpreadSheet({ documentName }: SpreadSheetProps) {
 
       updateDisplayValues();
     }
-
   }
 
   return (
-    <div>
-      <Formula formulaString={formulaString} resultString={resultString}  ></Formula>
-      <Status statusString={statusString}></Status>
-      {<SheetHolder cellsValues={cells}
-        onClick={onCellClick}
-        currentCell={currentCell}
-        currentlyEditing={currentlyEditing} ></SheetHolder>}
-      <KeyPad onButtonClick={onButtonClick}
-        onCommandButtonClick={onCommandButtonClick}
-        currentlyEditing={currentlyEditing}></KeyPad>
-      {getUserLogin()}
-    </div>
-  )
-};
+    <>
+      {error &&<ToastContainer />}
+      <div>
+        <Formula
+          formulaString={formulaString}
+          resultString={resultString}
+        ></Formula>
+        <Status statusString={statusString}></Status>
+        {
+          <SheetHolder
+            cellsValues={cells}
+            onClick={onCellClick}
+            currentCell={currentCell}
+            currentlyEditing={currentlyEditing}
+          ></SheetHolder>
+        }
+        <KeyPad
+          onButtonClick={onButtonClick}
+          onCommandButtonClick={onCommandButtonClick}
+          currentlyEditing={currentlyEditing}
+        ></KeyPad>
+        {getUserLogin()}
+      </div>
+    </>
+  );
+}
 
 export default SpreadSheet;
