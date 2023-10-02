@@ -6,7 +6,7 @@ Name: Cuiting Huang
 GitHub Handle:
 
 - How many hours did it take you to complete this assignment?
-10 hours
+around 10 hours
 
 - Did you collaborate or share ideas with any other students/TAs/Professors?
 Nope
