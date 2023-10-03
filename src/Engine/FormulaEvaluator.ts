@@ -13,18 +13,13 @@ export class FormulaEvaluator {
   private _sheetMemory: SheetMemory;
   private _result: number = 0;
 
-
   constructor(memory: SheetMemory) {
     this._sheetMemory = memory;
   }
 
   evaluate(formula: FormulaType) {
-
-
     // set the this._result to the length of the formula
-
     this._currentFormula = [...formula]
-
     this._lastResult = 0
     this._errorOccured = false;
     this._errorMessage = "";
@@ -37,7 +32,7 @@ export class FormulaEvaluator {
 
     let res = this.addition()
     this._result = res
-    
+
     if (this._currentFormula.length > 0 && !this._errorOccured) {
       this._errorOccured = true;
       this._errorMessage = ErrorMessages.invalidFormula;
@@ -57,53 +52,8 @@ export class FormulaEvaluator {
   }
 
   /**
-   * @returns the result of the formula addition
-   */
-
-  private addition(): number {
-    let result = this.multiplication();
-    while (this._currentFormula.length > 0 && (this._currentFormula[0] === "+" || this._currentFormula[0] === "-")) {
-      let operator = this._currentFormula.shift();
-      let multiplication = this.multiplication();
-      if (operator === "+") {
-        result += multiplication;
-
-      } else {
-        result -= multiplication;
-      }
-    }
-    this._lastResult = result;
-    return result;
-  }
-
-  /**
-   * @returns the result of the formula multiplication
-   */
-
-  private multiplication(): number {
-    let result = this.bracket();
-    while (this._currentFormula.length > 0 && (this._currentFormula[0] === "*" || this._currentFormula[0] === "/")) {
-      let operator = this._currentFormula.shift();
-      let bracket = this.bracket();
-      if (operator === "*") {
-        result *= bracket;
-      } else if(operator ==="/"){
-        if (bracket === 0) {
-          this._errorOccured = true;
-          this._errorMessage = ErrorMessages.divideByZero;
-          this._lastResult = Infinity;
-          return Infinity;
-        }
-        result /= bracket;
-      }
-    }
-    this._lastResult = result;
-    return result;
-  }
-
-    /**
-   * @returns the result of the formula in brackets
-   */
+* @returns the result of the formula in brackets
+*/
 
   private bracket(): number {
     let result = 0
@@ -112,9 +62,7 @@ export class FormulaEvaluator {
       this._errorMessage = ErrorMessages.partial;
       return result;
     }
-
     let token = this._currentFormula.shift();
-
     if (this.isNumber(token)) {
       result = Number(token);
       this._lastResult = result;
@@ -146,6 +94,54 @@ export class FormulaEvaluator {
   }
 
   /**
+   * @returns the result of the formula multiplication
+   */
+
+  private multiplication(): number {
+    let result = this.bracket();
+    while (this._currentFormula.length > 0 && (this._currentFormula[0] === "*" || this._currentFormula[0] === "/")) {
+      let operator = this._currentFormula.shift();
+      let bracket = this.bracket();
+      if (operator === "*") {
+        result *= bracket;
+      } else {
+        if (bracket === 0) {
+          this._errorOccured = true;
+          this._errorMessage = ErrorMessages.divideByZero;
+          this._lastResult = Infinity;
+          return Infinity;
+        }
+        result /= bracket;
+      }
+    }
+    this._lastResult = result;
+    return result;
+  }
+
+
+  /**
+   * @returns the result of the formula addition
+   */
+
+  private addition(): number {
+    let result = this.multiplication();
+    while (this._currentFormula.length > 0 && (this._currentFormula[0] === "+" || this._currentFormula[0] === "-")) {
+      let operator = this._currentFormula.shift();
+      let multiplication = this.multiplication();
+      if (operator === "+") {
+        result += multiplication;
+
+      } else {
+        result -= multiplication;
+      }
+    }
+    this._lastResult = result;
+    return result;
+  }
+
+
+
+  /**
    * 
    * @param token 
    * @returns true if the toke can be parsed to a number
@@ -175,7 +171,7 @@ export class FormulaEvaluator {
    * @returns [0, ErrorMessages.invalidCell] if the cell formula is empty
    * 
    */
-  
+
   getCellValue(token: TokenType): [number, string] {
 
     let cell = this._sheetMemory.getCellByLabel(token);
