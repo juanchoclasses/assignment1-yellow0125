@@ -25,6 +25,7 @@ export class FormulaEvaluator {
 
     this._currentFormula = [...formula]
 
+    this._lastResult = 0
     this._errorOccured = false;
     this._errorMessage = "";
 
@@ -60,9 +61,6 @@ export class FormulaEvaluator {
    */
 
   private addition(): number {
-    if (this._errorOccured) {
-      return this._lastResult;
-    }
     let result = this.multiplication();
     while (this._currentFormula.length > 0 && (this._currentFormula[0] === "+" || this._currentFormula[0] === "-")) {
       let operator = this._currentFormula.shift();
@@ -83,25 +81,20 @@ export class FormulaEvaluator {
    */
 
   private multiplication(): number {
-    if (this._errorOccured) {
-      return this._lastResult;
-    }
-
     let result = this.bracket();
-
     while (this._currentFormula.length > 0 && (this._currentFormula[0] === "*" || this._currentFormula[0] === "/")) {
       let operator = this._currentFormula.shift();
-      let factor = this.bracket();
+      let bracket = this.bracket();
       if (operator === "*") {
-        result *= factor;
+        result *= bracket;
       } else if(operator ==="/"){
-        if (factor === 0) {
+        if (bracket === 0) {
           this._errorOccured = true;
           this._errorMessage = ErrorMessages.divideByZero;
           this._lastResult = Infinity;
           return Infinity;
         }
-        result /= factor;
+        result /= bracket;
       }
     }
     this._lastResult = result;
@@ -113,13 +106,7 @@ export class FormulaEvaluator {
    */
 
   private bracket(): number {
-
-    if (this._errorOccured) {
-      return this._lastResult;
-    }
-
     let result = 0
-
     if (this._currentFormula.length === 0) {
       this._errorOccured = true;
       this._errorMessage = ErrorMessages.partial;
